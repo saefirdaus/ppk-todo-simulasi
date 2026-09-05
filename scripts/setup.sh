@@ -79,10 +79,10 @@ print_step "Build container Docker..."
 docker compose build
 print_success "Build selesai."
 
-# --- 5. Jalankan container ---
-print_step "Menjalankan container..."
-docker compose up -d
-print_success "Container berjalan."
+# --- 5. Jalankan database terlebih dahulu ---
+print_step "Menjalankan database..."
+docker compose up -d db
+print_success "Database container berjalan."
 
 # --- 6. Tunggu database siap ---
 print_step "Menunggu database siap..."
@@ -97,30 +97,35 @@ until docker compose exec -T db mysqladmin ping -p"${DB_ROOT_PASSWORD:-root_pass
 done
 print_success "Database siap."
 
-# --- 7. Install dependensi Composer ---
+# --- 7. Install dependensi Composer (sebelum app container hidup) ---
 print_step "Menginstal dependensi Composer..."
-docker compose exec -T app composer install
+docker compose run --rm --no-deps app composer install
 print_success "Dependensi Composer terinstal."
 
 # --- 8. Generate application key ---
 print_step "Generate application key..."
-docker compose exec -T app php artisan key:generate
+docker compose run --rm --no-deps app php artisan key:generate
 print_success "Application key berhasil di-generate."
 
 # --- 9. Jalankan migrasi ---
 print_step "Menjalankan migrasi database..."
-docker compose exec -T app php artisan migrate --force
+docker compose run --rm app php artisan migrate --force
 print_success "Migrasi selesai."
 
 # --- 10. Install dependensi NPM (opsional) ---
 print_step "Memeriksa Node.js di container..."
-if docker compose exec -T app which node &> /dev/null; then
+if docker compose run --rm --no-deps app which node &> /dev/null; then
     print_step "Menginstal dependensi NPM..."
-    docker compose exec -T app npm install
+    docker compose run --rm --no-deps app npm install
     print_success "Dependensi NPM terinstal."
 else
     print_warning "Node.js tidak tersedia di container, lewati install NPM."
 fi
+
+# --- 11. Jalankan semua container ---
+print_step "Menjalankan semua container..."
+docker compose up -d
+print_success "Semua container berjalan."
 
 echo ""
 echo -e "${GREEN}========================================${NC}"

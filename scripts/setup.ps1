@@ -63,11 +63,11 @@ docker compose build
 if ($LASTEXITCODE -ne 0) { Write-Err "Build gagal."; exit 1 }
 Write-Ok "Build selesai."
 
-# --- 5. Jalankan container ---
-Write-Step "Menjalankan container..."
-docker compose up -d
-if ($LASTEXITCODE -ne 0) { Write-Err "Gagal menjalankan container."; exit 1 }
-Write-Ok "Container berjalan."
+# --- 5. Jalankan database terlebih dahulu ---
+Write-Step "Menjalankan database..."
+docker compose up -d db
+if ($LASTEXITCODE -ne 0) { Write-Err "Gagal menjalankan database."; exit 1 }
+Write-Ok "Database container berjalan."
 
 # --- 6. Tunggu database siap ---
 Write-Step "Menunggu database siap..."
@@ -88,23 +88,29 @@ if (-not $dbReady) {
 }
 Write-Ok "Database siap."
 
-# --- 7. Install dependensi Composer ---
+# --- 7. Install dependensi Composer (sebelum app container hidup) ---
 Write-Step "Menginstal dependensi Composer..."
-docker compose exec -T app composer install
+docker compose run --rm --no-deps app composer install
 if ($LASTEXITCODE -ne 0) { Write-Err "Composer install gagal."; exit 1 }
 Write-Ok "Dependensi Composer terinstal."
 
 # --- 8. Generate application key ---
 Write-Step "Generate application key..."
-docker compose exec -T app php artisan key:generate
+docker compose run --rm --no-deps app php artisan key:generate
 if ($LASTEXITCODE -ne 0) { Write-Err "Key generation gagal."; exit 1 }
 Write-Ok "Application key berhasil di-generate."
 
 # --- 9. Jalankan migrasi ---
 Write-Step "Menjalankan migrasi database..."
-docker compose exec -T app php artisan migrate --force
+docker compose run --rm app php artisan migrate --force
 if ($LASTEXITCODE -ne 0) { Write-Err "Migrasi gagal."; exit 1 }
 Write-Ok "Migrasi selesai."
+
+# --- 10. Jalankan semua container ---
+Write-Step "Menjalankan semua container..."
+docker compose up -d
+if ($LASTEXITCODE -ne 0) { Write-Err "Gagal menjalankan container."; exit 1 }
+Write-Ok "Semua container berjalan."
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Green
