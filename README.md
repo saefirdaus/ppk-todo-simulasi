@@ -1,58 +1,165 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# PPK Room Reservation
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi web untuk mengelola penggunaan fasilitas kampus (ruang kelas, aula, laboratorium, alat, dan lapangan). Pengguna dapat mengecek ketersediaan dan mengajukan reservasi, serta melaporkan kerusakan atau masalah pada fasilitas. Petugas dan admin memproses kedua alur (reservasi dan laporan) secara terpusat dalam satu sistem.
 
-## About Laravel
+## Tech Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+| Layer | Teknologi |
+|---|---|
+| Backend | Laravel 13, PHP 8.4 |
+| Frontend | Blade, Tailwind CSS 4, Vite 8 |
+| Database | MySQL 8.0 |
+| Containerization | Docker, Docker Compose |
+| DB Admin | phpMyAdmin |
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Prasyarat
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+- [Docker](https://docs.docker.com/get-docker/) & [Docker Compose](https://docs.docker.com/compose/install/)
+- Git
 
-## Learning Laravel
+> **Catatan:** PHP dan Composer **tidak** perlu diinstal di mesin host. Semua dependensi sudah tersedia di dalam container Docker.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Quick Start
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### Otomatis (Recommended)
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+# Linux / macOS
+chmod +x scripts/setup.sh
+./scripts/setup.sh
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+```powershell
+# Windows PowerShell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+.\scripts\setup.ps1
+```
 
-## Contributing
+### Manual
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+# 1. Clone repository
+git clone https://github.com/Shriv-ert/PPK-Room-Reservation.git
+cd PPK-Room-Reservation
 
-## Code of Conduct
+# 2. Salin file environment
+cp .env.example .env
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# 3. Build dan jalankan container
+docker compose build
+docker compose up -d
 
-## Security Vulnerabilities
+# 4. Install dependensi PHP (pertama kali saja)
+docker compose exec app composer install
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# 5. Generate application key (pertama kali saja)
+docker compose exec app php artisan key:generate
 
-## License
+# 6. Jalankan migrasi database
+docker compose exec app php artisan migrate
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+# 7. (Opsional) Jalankan seeder
+docker compose exec app php artisan db:seed
+```
+
+Aplikasi siap diakses setelah langkah di atas selesai.
+
+## Akses Layanan
+
+| Layanan | URL | Keterangan |
+|---|---|---|
+| Aplikasi | [http://localhost:8000](http://localhost:8000) | Laravel application |
+| phpMyAdmin | [http://localhost:8080](http://localhost:8080) | Database admin UI |
+| MySQL | `localhost:3306` | Direct DB connection |
+
+## Docker Services
+
+| Service | Container | Image | Port |
+|---|---|---|---|
+| `app` | `ppk_app` | Custom (PHP 8.4-cli + Composer) | 8000 |
+| `db` | `ppk_db` | mysql:8.0 | 3306 |
+| `phpmyadmin` | `ppk_phpmyadmin` | phpmyadmin/phpmyadmin:latest | 8080 |
+
+## Perintah Umum
+
+```bash
+# Menjalankan semua container
+docker compose up -d
+
+# Menghentikan semua container
+docker compose down
+
+# Melihat log container
+docker compose logs -f
+
+# Masuk ke shell container app
+docker compose exec app bash
+
+# Menjalankan artisan command
+docker compose exec app php artisan <command>
+
+# Menjalankan migrasi
+docker compose exec app php artisan migrate
+
+# Rollback migrasi
+docker compose exec app php artisan migrate:rollback
+
+# Menjalankan test
+docker compose exec app php artisan test
+
+# Install dependensi Composer
+docker compose exec app composer install
+
+# Rebuild container setelah mengubah Dockerfile
+docker compose build app
+docker compose up -d app
+```
+
+## Struktur Proyek
+
+```
+├── app/                    # Kode aplikasi Laravel (Models, Controllers, dll.)
+├── bootstrap/              # Laravel bootstrap files
+├── config/                 # Konfigurasi aplikasi
+├── database/
+│   ├── factories/          # Model factories
+│   ├── migrations/         # Database migrations
+│   └── seeders/            # Database seeders
+├── docker/
+│   └── php/
+│       └── custom.ini      # Konfigurasi PHP custom
+├── public/                 # Entry point & public assets
+├── resources/              # Views, CSS, JS
+├── routes/                 # Route definitions
+├── storage/                # Logs, cache, uploads
+├── tests/                  # Unit & feature tests
+├── .env.example            # Template environment variables
+├── docker-compose.yml      # Docker Compose configuration
+├── Dockerfile              # PHP application container
+├── CASE.md                 # Spesifikasi & user stories proyek
+└── meet-1.md               # Notulen meeting pertama
+```
+
+## Konfigurasi Database
+
+Kredensial default (dapat diubah di `.env`):
+
+| Key | Default |
+|---|---|
+| `DB_DATABASE` | `ppk_room_reservation` |
+| `DB_USERNAME` | `laravel_user` |
+| `DB_PASSWORD` | `laravel_password` |
+| `DB_ROOT_PASSWORD` | `root_password` |
+
+## Aktor Sistem
+
+| Aktor | Deskripsi |
+|---|---|
+| **Pengunjung** | Melihat daftar fasilitas dan ketersediaan jadwal tanpa login |
+| **Pengguna** | Mahasiswa/Dosen/Staf yang dapat mengajukan reservasi dan melaporkan kerusakan |
+| **Petugas** | Memproses antrian reservasi & laporan kerusakan |
+| **Admin** | Mengelola data master fasilitas, akun, dan rekap |
+
+## Tim
+
+Proyek tugas mata kuliah Pengembangan Platform Khusus 2026.

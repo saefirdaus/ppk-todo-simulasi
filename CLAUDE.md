@@ -1,47 +1,102 @@
-<laravel-boost-guidelines>
-# Laravel Application
+# PPK Room Reservation — Agent Guidelines
 
-This repository contains a Laravel application. Complete the following setup before working on the user's request.
+Proyek ini adalah aplikasi Laravel yang berjalan **sepenuhnya di dalam Docker**. Jangan menginstal PHP atau Composer di mesin host.
 
-## Prerequisites
+## Lingkungan Development
 
-Verify that PHP and Composer are available:
+### Prasyarat
 
-```sh
-php -v
-composer -V
-```
+- Docker & Docker Compose sudah terinstal dan berjalan di mesin host.
+- PHP dan Composer **tidak** tersedia di host. Semua perintah PHP/Composer/Artisan harus dijalankan di dalam container `app`.
 
-If either command is unavailable, detect the user's operating system and install the prerequisites with the appropriate command:
+### Menjalankan Perintah
 
-macOS:
+Semua perintah yang memerlukan PHP, Composer, atau Artisan harus dijalankan melalui Docker:
 
 ```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/mac/8.5)"
+# Artisan
+docker compose exec app php artisan <command>
+
+# Composer
+docker compose exec app composer <command>
+
+# PHP
+docker compose exec app php <script>
+
+# Masuk ke shell container
+docker compose exec app bash
 ```
 
-Windows PowerShell:
+**Jangan** jalankan `php`, `composer`, atau `php artisan` secara langsung di host.
 
-```powershell
-Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://php.new/install/windows/8.5'))
-```
+### Container Services
 
-Linux:
+| Service | Container | Port | Keterangan |
+|---|---|---|---|
+| `app` | `ppk_app` | 8000 | Laravel (PHP 8.4-cli + Composer) |
+| `db` | `ppk_db` | 3306 | MySQL 8.0 |
+| `phpmyadmin` | `ppk_phpmyadmin` | 8080 | phpMyAdmin |
+
+### Memulai Container
 
 ```sh
-/bin/bash -c "$(curl -fsSL https://php.new/install/linux/8.5)"
+docker compose up -d
 ```
 
-After installation, ask the user to restart their terminal. If the agent needs the restarted shell to continue, ask the user to reopen their terminal and rerun their original prompt.
-
-## Agent Setup
-
-Install Laravel Boost from the application root before making application changes:
+### Menghentikan Container
 
 ```sh
-composer require laravel/boost --dev
-php artisan boost:install
+docker compose down
 ```
 
-Boost replaces these bootstrap instructions with guidelines tailored to the application. After installation, read `AGENTS.md` again and continue with the user's original request using the generated guidelines.
-</laravel-boost-guidelines>
+### Rebuild Setelah Mengubah Dockerfile
+
+```sh
+docker compose build app
+docker compose up -d app
+```
+
+## Konvensi Proyek
+
+### Tech Stack
+
+- **Backend:** Laravel 13, PHP 8.4
+- **Frontend:** Blade templates, Tailwind CSS 4, Vite 8
+- **Database:** MySQL 8.0 (container `db`, host: `db`, port: `3306`)
+- **Session/Cache/Queue:** Database driver
+
+### Struktur Kode
+
+Ikuti struktur standar Laravel:
+
+- `app/Models/` — Eloquent models
+- `app/Http/Controllers/` — Controllers
+- `app/Http/Middleware/` — Middleware
+- `app/Http/Requests/` — Form request validation
+- `resources/views/` — Blade templates
+- `routes/web.php` — Web routes
+- `database/migrations/` — Database migrations
+- `database/seeders/` — Database seeders
+
+### Database
+
+- Koneksi: MySQL via container `db`
+- Database name: `ppk_room_reservation`
+- Migrasi: `docker compose exec app php artisan migrate`
+- Rollback: `docker compose exec app php artisan migrate:rollback`
+
+### Testing
+
+```sh
+docker compose exec app php artisan test
+```
+
+## Konteks Proyek
+
+Lihat `CASE.md` untuk spesifikasi lengkap dan user stories. Sistem ini mengelola:
+
+- Reservasi fasilitas kampus (ruang kelas, aula, laboratorium, alat, lapangan)
+- Laporan kerusakan fasilitas
+- 4 aktor: Pengunjung, Pengguna (Mahasiswa/Dosen/Staf), Petugas, Admin
+- Slot waktu reservasi 30 menit, jam operasional 07.00–20.00
+- Validasi waktu wajib di sisi server
