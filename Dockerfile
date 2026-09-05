@@ -16,7 +16,8 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     default-mysql-client \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /etc/mysql/conf.d && printf '[client]\nssl = 0\n' > /etc/mysql/conf.d/disable-ssl.cnf
 
 # Install PHP extensions required by Laravel
 RUN docker-php-ext-install \
